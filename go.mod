@@ -36,7 +36,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/consul/api v1.31.2
 	github.com/hashicorp/nomad/api v0.0.0-20241218080744-e3ac00f30eec
-	github.com/hetznercloud/hcloud-go/v2 v2.19.1
+	github.com/hetznercloud/hcloud-go/v2 v2.22.0
 	github.com/ionos-cloud/sdk-go/v6 v6.3.2
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/compress v1.18.0
@@ -51,7 +51,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor v0.121.0
 	github.com/ovh/go-ovh v1.7.0
 	github.com/prometheus/alertmanager v0.28.0
-	github.com/prometheus/client_golang v1.21.0-rc.0
+	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.63.0
 	github.com/prometheus/common/assets v0.2.0
@@ -80,10 +80,10 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
 	golang.org/x/oauth2 v0.27.0
-	golang.org/x/sync v0.12.0
-	golang.org/x/sys v0.30.0
-	golang.org/x/text v0.23.0
-	golang.org/x/tools v0.30.0
+	golang.org/x/sync v0.16.0
+	golang.org/x/sys v0.34.0
+	golang.org/x/text v0.27.0
+	golang.org/x/tools v0.34.0
 	google.golang.org/api v0.224.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a
 	google.golang.org/grpc v1.71.0
@@ -197,11 +197,11 @@ require (
 	go.opentelemetry.io/collector/pipeline v0.121.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/mod v0.25.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/term v0.33.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250227231956-55c901821b1e // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
