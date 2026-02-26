@@ -22,7 +22,15 @@ import (
 )
 
 func mmap(f *os.File, length int) ([]byte, error) {
-	return unix.Mmap(int(f.Fd()), 0, length, unix.PROT_READ, unix.MAP_SHARED)
+	m, err := unix.Mmap(int(f.Fd()), 0, length, unix.PROT_READ, unix.MAP_SHARED)
+	if err != nil {
+		return nil, err
+	}
+	if err := unix.Madvise(m, unix.MADV_DONTNEED); err != nil {
+		unix.Munmap(m)
+		return nil, err
+	}
+	return m, nil
 }
 
 func munmap(b []byte) (err error) {
