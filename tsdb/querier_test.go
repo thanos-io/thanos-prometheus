@@ -2376,7 +2376,7 @@ func (m mockIndex) ShardedPostings(p index.Postings, shardIndex, shardCount uint
 	return index.NewListPostings(out)
 }
 
-func (m mockIndex) Series(ref storage.SeriesRef, builder *labels.ScratchBuilder, chks *[]chunks.Meta) error {
+func (m mockIndex) Series(ref storage.SeriesRef, builder *labels.ScratchBuilder, chks *[]chunks.Meta, _ ...index.SeriesParam) error {
 	s, ok := m.series[ref]
 	if !ok {
 		return storage.ErrNotFound
@@ -3339,7 +3339,7 @@ func (m mockMatcherIndex) ShardedPostings(ps index.Postings, _, _ uint64) index.
 	return ps
 }
 
-func (m mockMatcherIndex) Series(_ storage.SeriesRef, _ *labels.ScratchBuilder, _ *[]chunks.Meta) error {
+func (m mockMatcherIndex) Series(_ storage.SeriesRef, _ *labels.ScratchBuilder, _ *[]chunks.Meta, _ ...index.SeriesParam) error {
 	return nil
 }
 
@@ -3801,7 +3801,7 @@ func (m mockReaderOfLabels) SortedPostings(index.Postings) index.Postings {
 	panic("SortedPostings called")
 }
 
-func (m mockReaderOfLabels) Series(storage.SeriesRef, *labels.ScratchBuilder, *[]chunks.Meta) error {
+func (m mockReaderOfLabels) Series(storage.SeriesRef, *labels.ScratchBuilder, *[]chunks.Meta, ...index.SeriesParam) error {
 	panic("Series called")
 }
 

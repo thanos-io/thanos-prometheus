@@ -950,7 +950,7 @@ func (w *Writer) writePostingsToTmpFiles() error {
 			// Symbol numbers are in order, so the strings will also be in order.
 			slices.Sort(values)
 			for _, v := range values {
-				value, err := w.symbols.Lookup(v)
+				value, err := w.symbols.Lookup(v, false)
 				if err != nil {
 					return err
 				}
@@ -1334,7 +1334,7 @@ func NewSymbols(bs ByteSlice, version, off int) (*Symbols, error) {
 	return s, nil
 }
 
-func (s Symbols) Lookup(o uint32) (string, error) {
+func (s Symbols) Lookup(o uint32, noCopy bool) (string, error) {
 	d := encoding.Decbuf{
 		B: s.bs.Range(0, s.bs.Len()),
 	}
@@ -1350,6 +1350,14 @@ func (s Symbols) Lookup(o uint32) (string, error) {
 		for i := o - (o / symbolFactor * symbolFactor); i > 0; i-- {
 			d.UvarintBytes()
 		}
+	}
+
+	if noCopy {
+		sym := d.UvarintBytes()
+		if d.Err() != nil {
+			return "", d.Err()
+		}
+		return yoloString(sym), nil
 	}
 	sym := d.UvarintStr()
 	if d.Err() != nil {
@@ -1473,11 +1481,11 @@ func (r *Reader) Close() error {
 	return r.c.Close()
 }
 
-func (r *Reader) lookupSymbol(_ context.Context, o uint32) (string, error) {
+func (r *Reader) lookupSymbol(_ context.Context, o uint32, noCopy bool) (string, error) {
 	if s, ok := r.nameSymbols[o]; ok {
 		return s, nil
 	}
-	return r.symbols.Lookup(o)
+	return r.symbols.Lookup(o, noCopy)
 }
 
 // Symbols returns an iterator over the symbols that exist within the index.
@@ -1589,7 +1597,7 @@ func (r *Reader) LabelNamesFor(ctx context.Context, postings Postings) ([]string
 	// Lookup the unique symbols.
 	names := make([]string, 0, len(offsetsMap))
 	for off := range offsetsMap {
-		name, err := r.lookupSymbol(ctx, off)
+		name, err := r.lookupSymbol(ctx, off, false)
 		if err != nil {
 			return nil, fmt.Errorf("lookup symbol in LabelNamesFor: %w", err)
 		}
@@ -1627,8 +1635,24 @@ func (r *Reader) LabelValueFor(ctx context.Context, id storage.SeriesRef, label 
 	return value, nil
 }
 
+type seriesParams struct {
+	noCopy bool
+}
+
+type SeriesParam func(p *seriesParams) *seriesParams
+
+func SeriesNoCopy(p *seriesParams) *seriesParams {
+	p.noCopy = true
+	return p
+}
+
 // Series reads the series with the given ID and writes its labels and chunks into builder and chks.
-func (r *Reader) Series(id storage.SeriesRef, builder *labels.ScratchBuilder, chks *[]chunks.Meta) error {
+func (r *Reader) Series(id storage.SeriesRef, builder *labels.ScratchBuilder, chks *[]chunks.Meta, params ...SeriesParam) error {
+	p := &seriesParams{}
+	for _, pr := range params {
+		p = pr(p)
+	}
+
 	offset := id
 	// In version 2 series IDs are no longer exact references but series are 16-byte padded
 	// and the ID is the multiple of 16 of the actual position.
@@ -1641,7 +1665,7 @@ func (r *Reader) Series(id storage.SeriesRef, builder *labels.ScratchBuilder, ch
 	}
 	builder.SetSymbolTable(r.st)
 	builder.Reset()
-	err := r.dec.Series(d.Get(), builder, chks)
+	err := r.dec.Series(d.Get(), builder, chks, p.noCopy)
 	if err != nil {
 		return fmt.Errorf("read series: %w", err)
 	}
@@ -1927,7 +1951,7 @@ func (s stringListIter) Err() error { return nil }
 // It currently does not contain decoding methods for all entry types but can be extended
 // by them if there's demand.
 type Decoder struct {
-	LookupSymbol   func(context.Context, uint32) (string, error)
+	LookupSymbol   func(context.Context, uint32, bool) (string, error)
 	DecodePostings PostingsDecoder
 }
 
@@ -1976,13 +2000,13 @@ func (dec *Decoder) LabelValueFor(ctx context.Context, b []byte, label string) (
 			return "", fmt.Errorf("read series label offsets: %w", d.Err())
 		}
 
-		ln, err := dec.LookupSymbol(ctx, lno)
+		ln, err := dec.LookupSymbol(ctx, lno, false)
 		if err != nil {
 			return "", fmt.Errorf("lookup label name: %w", err)
 		}
 
 		if ln == label {
-			lv, err := dec.LookupSymbol(ctx, lvo)
+			lv, err := dec.LookupSymbol(ctx, lvo, false)
 			if err != nil {
 				return "", fmt.Errorf("lookup label value: %w", err)
 			}
@@ -1997,7 +2021,7 @@ func (dec *Decoder) LabelValueFor(ctx context.Context, b []byte, label string) (
 // Series decodes a series entry from the given byte slice into builder and chks.
 // Previous contents of builder can be overwritten - make sure you copy before retaining.
 // Skips reading chunks metadata if chks is nil.
-func (dec *Decoder) Series(b []byte, builder *labels.ScratchBuilder, chks *[]chunks.Meta) error {
+func (dec *Decoder) Series(b []byte, builder *labels.ScratchBuilder, chks *[]chunks.Meta, noCopy bool) error {
 	builder.Reset()
 	if chks != nil {
 		*chks = (*chks)[:0]
@@ -2015,11 +2039,11 @@ func (dec *Decoder) Series(b []byte, builder *labels.ScratchBuilder, chks *[]chu
 			return fmt.Errorf("read series label offsets: %w", d.Err())
 		}
 
-		ln, err := dec.LookupSymbol(context.TODO(), lno)
+		ln, err := dec.LookupSymbol(context.TODO(), lno, noCopy)
 		if err != nil {
 			return fmt.Errorf("lookup label name: %w", err)
 		}
-		lv, err := dec.LookupSymbol(context.TODO(), lvo)
+		lv, err := dec.LookupSymbol(context.TODO(), lvo, noCopy)
 		if err != nil {
 			return fmt.Errorf("lookup label value: %w", err)
 		}

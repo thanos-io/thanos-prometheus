@@ -205,7 +205,7 @@ func TestIndexRW_Postings(t *testing.T) {
 		d := encoding.NewDecbufAt(ir.b, int(off), castagnoliTable)
 		require.Equal(t, 1, d.Be32int(), "Unexpected number of label indices table names")
 		for i := d.Be32(); i > 0 && d.Err() == nil; i-- {
-			v, err := ir.lookupSymbol(ctx, d.Be32())
+			v, err := ir.lookupSymbol(ctx, d.Be32(), false)
 			require.NoError(t, err)
 			labelIndices[lbl] = append(labelIndices[lbl], v)
 		}
@@ -511,11 +511,11 @@ func TestSymbols(t *testing.T) {
 	require.Equal(t, 32, s.Size())
 
 	for i := 99; i >= 0; i-- {
-		s, err := s.Lookup(uint32(i))
+		s, err := s.Lookup(uint32(i), false)
 		require.NoError(t, err)
 		require.Equal(t, string(rune(i)), s)
 	}
-	_, err = s.Lookup(100)
+	_, err = s.Lookup(100, false)
 	require.Error(t, err)
 
 	for i := 99; i >= 0; i-- {
